@@ -1,0 +1,317 @@
+Go Loves APIs
+21 May 2020
+
+Mauricio De La Quintana
+Fullstack Developer
+mauricio.delaquintana@outlook.com
+@maudelaquintana
+https://mauriciodelaquintana.com
+
+: I'm Mauricio, I work at a the oneApi project for Mercedes Benz.
+: I've been using Go for 1 year, loving it. In my spare time I enjoy working on
+: Organizer of communities and golang 
+: and I like to write about go in my spare time
+
+* Today We Will Talk About
+
+- Learn About APIs
+- Learn How To Build APIs with Go
+- Discuss About Good Practices
+
+.image go-gopher-nerd.jpg 300 _
+
+: Today we will learn what WebAssembly is, how to use WebAssembly with Go, show whats possible today and briefly look at what will be possible tomorrow!
+: Next up: Lets start with WebAssembly
+: 00:30
+
+* APIs
+
+: Show of hands, who's (heard of)/using APIs?
+
+* 
+
+.image oilb.jpg 300 _
+
+“The difference between oil and data is that the product of oil does not generate more oil (unfortunately), whereas the product of data (self-driving cars, drones, wearables, etc) will generate more data (where do you normally drive, how fast/well you drive, who is with you, etc).”
+
+* Lets Build an API
+
+* Things to Consider 
+
+User Expectations 
+
+- Performance
+
+- Security
+
+Developers Expectations
+
+- Compatibility
+
+- Developer experience
+
+- Stability 
+
+* The Wanted Profile
+
+- Want a language that offers the right balance between performance and code readability
+- Easy to deploy, No large deployment stack required.
+- Resource friendly
+- The language offers enough of functionality to not need any or almost any 3rd party dependencies
+- Has broad a ecosystem of tools for APIs
+
+
+
+*  Why use Go for web and API development?
+
+- KISS - Keep it stupid and simple (number of keywords: Go = 25, Ansi-C = 32, Java = 50)
+- Compatibility -  a Go 1.0 program builds with Go 1.14 without any code changes. 
+- Support of concurrency, parallelism and distribution ( multi-core / cloud ),
+- Fast, real-time garbage collection,
+- Static linker ( single binary ) - Ideal for Docker containers,
+
+.image idiomatic.jpg  300 _
+
+
+: Interact With them, go and chill go
+
+
+* How de we build APIs ?
+
+* API LifeCycle
+
+.image api_lifecycle.png 400 _
+
+* What matters for Design and Documentation ?
+
+- Details 
+
+- Audience
+
+- Community
+
+- Simplicity
+
+.image Standards.png 200 _
+
+* Reference Manual - Spec
+
+.image swagger.png 400 _
+
+* Tools
+
+- Go Swagger 
+
+    Generates a server or client from a swagger spec 
+    Supports Json Schema
+
+- Speccy
+
+    Leets you divide your spec in multiple files
+    Lints your spec for any errors 
+
+- Stoplight Studio
+
+    Editor for writing swager specs
+    
+
+.image gopherswagger.png 200 _
+
+
+: Swagger codegen
+: Resulting code is full of errors
+: Generator is written in Java
+: Go Swagger
+: Everything is configurable
+: 5 files per endpoint and model type
+
+
+* Workflow
+.image apidesign.png 150 _
+
+Pros
+
+- Validation and models can be generated
+- Easier Testing
+
+Cons
+
+- Generator has to run each time we have a changes
+- We cannot use it at runtime
+
+* Propossal 
+
+- Client should never break when the data model changes
+- enable automatic integration of new data
+- Separate business logic from the frontend 
+
+* let me introduce you to 
+
+* The monolith
+
+.image monolith.png 300 _
+
+
+* The microservice
+
+.image microservices.png 500 _
+
+
+* Backend as Frontend
+
+.image backend_as_fe.png 500 _
+
+
+* Roles
+
+Backend (data-service)
+
+- Should only perform complete and valid operations.
+
+- Should never ever lead to situations with conflicting or corrupt data.
+
+Frontend (frontend-service)
+
+- Edit, read and orchestrate the output data
+
+- Access control, auth, logging 
+
+- Fail Fast Principle
+
+* Guidelines
+
+* Error Handling 
+
+- Wrap Errors since Go 1.13
+    wrappingError := fmt.Errorf("I am a new error wrapping the following error: %w", wrappedError)
+
+- Have known error types 
+    ErrNotFound = status.Error(codes.NotFound, "error not found")
+
+.image errorhandling.jpg 300 _
+
+
+: I think the point here is to work with known error types and be able to determine whether a certain error is part of the wrapped error chain.
+: This is more work than just errors.Wrap(err, "some message") wrapping an error, as the wrapping type needs to be defined upfront, including its Error() and Unwrap() funcs.
+: While on-the-fly wrapping is useful to add context, I don't see its use when talking about error types, as the resulting error will be of anonymous type and cannot be checked against via Is().
+
+
+* gRPC
+
+- Communications protocol
+- Generate idiomatic client and server libraries for multiple languages
+- 1:N, N:1, N:M streaming support
+- Defined error codes for unambiguous errors
+
+.image grpcclient.png _ 500 
+
+
+: gRPC is a communications protocol, built on top of HTTP2. By default gRPC uses protobuf as its serialization format,
+: and many of the existing protobuf language generators can now generate gRPC Client and Server code.
+: Both Protobuffers and gRPC are developed and pushed by Google. gRPC has been donated to the Cloud Native Computing Foundation.
+: (Pause)
+: Olive has been reaping the benefit of this refactor for a while now, but what if all these nice things
+: could be had in our frontend-backend communications?
+
+* Protobuf
+
+    syntax = "proto3";
+    // Language-specific option used go code generator.
+    option go_package = "greet";
+    package demo;
+    // The greeting service definition.
+    service Greeter {
+    // Sends a greeting
+    rpc SayHello (HelloRequest) returns (HelloReply);
+    }
+    // The request message containing the user's name.
+    message HelloRequest {
+    string name = 1;
+    }
+    // The response message containing the greetings.
+    message HelloReply {
+    string message = 1;
+    }
+
+* Server
+
+    package main
+    import (
+    ...
+    )
+
+    // register service
+    server := grpc.NewServer()
+    greet.RegisterGreeterServer(server, service{})
+    greet.RegisterMathGuruServer(server, mathGuruService{})
+    // start gRPC server
+    log.Println("starting gRPC server...")
+    server.Serve(listen)
+    }
+
+* Client
+
+    package main
+    import (
+    ...
+    )
+    func main() {
+        conn, err := grpc.Dial("localhost:8080", grpc.WithInsecure())
+        if err != nil {
+            panic(err)
+        }
+        defer conn.Close()
+        client := greet.NewGreeterClient(conn)
+        response, err := client.SayHello(context.Background(),
+        &greet.HelloRequest{Name: "Hello Gophers"})
+        if err != nil {
+            panic(err)
+        }
+        log.Println(response.Message)
+    }
+
+
+* Manteinance
+
+
+.image notjustapi.png _ 700 
+
+* API Gateway
+
+- Logging 
+- Authentication
+- Monitoring
+
+.image test.png _ 400
+
+
+* Conclusion
+
+- Go makes it easy to build RESTful web services.
+- With Go you can easily build and connect GRPC web services.
+- Golang has a good ecosystem of tools for APIs
+
+
+* Things to keep in mind
+
+- Doing web and API development in Go might take more efforts in the beginning.
+- No predefined design such as MVC. If you want MVC, it's up to you to implement things that way
+- You are in control
+
+* Links
+
+- API tools for Gophers: [[https://www.moesif.com/blog/api-guide/development/api-resources-for-go-developers/]]
+- Api Design: [[https://yourbasic.org/algorithms/your-basic-api/]]
+- Microservices with Go: [[https://www.informatik-aktuell.de/entwicklung/methoden/microservices-mit-go.html]]
+- gRPC with Go: [[https://www.usenix.org/system/files/login/articles/login_spring18_11_mceniry.pdf]]
+
+.image keeptraining.png _ 400
+
+
+: These are some of the links you can use to get more information about the project. I'll get a link to the slides
+: sent around later.
+
+* Questions?
+
+.image gophercoding.png _ 500
+
